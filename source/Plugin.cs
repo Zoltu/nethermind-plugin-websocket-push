@@ -9,7 +9,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 {
 	public sealed class Plugin : DisposeSyncOnce, INethermindPlugin
 	{
-		public String Name => "PushPending";
+		public String Name => "WebSocketPush";
 		public String Description => "Pushes all new pending transactions to any connected WebSocket clients.";
 		public String Author => "Micah";
 		private PendingWebSocketModule? _pendingWebSocketModule;
