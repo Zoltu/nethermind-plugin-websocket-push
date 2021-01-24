@@ -18,7 +18,14 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 
 		public async Task Send(Block block)
 		{
-			var transactionAsString = _jsonSerializer.Serialize(block);
+			var simpleBlock = new
+			{
+				ParentHash = block.ParentHash!,
+				Hash = block.Hash!,
+				block.Number,
+				block.Timestamp
+			};
+			var transactionAsString = _jsonSerializer.Serialize(simpleBlock);
 			await SendRawAsync(transactionAsString);
 		}
 	}
