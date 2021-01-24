@@ -69,5 +69,5 @@ jobs:
           echo IMAGE_ID=$IMAGE_ID
           echo VERSION=$VERSION
 
-          docker tag ${{ github.repository }} $IMAGE_ID:$VERSION
+          docker tag $IMAGE_TAG $IMAGE_ID:$VERSION
           docker push $IMAGE_ID:$VERSION
