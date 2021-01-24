@@ -5,14 +5,15 @@ using Nethermind.Api.Extensions;
 using Nethermind.JsonRpc;
 using Nethermind.Logging;
 
-namespace Zoltu.Nethermind.Plugin.PushPending
+namespace Zoltu.Nethermind.Plugin.WebSocketPush
 {
 	public sealed class Plugin : DisposeSyncOnce, INethermindPlugin
 	{
 		public String Name => "PushPending";
 		public String Description => "Pushes all new pending transactions to any connected WebSocket clients.";
 		public String Author => "Micah";
-		private WebSocketModule? _webSocketModule;
+		private PendingWebSocketModule? _pendingWebSocketModule;
+		private BlockWebSocketModule? _blockWebSocketModule;
 		private INethermindApi? _nethermindApi;
 		private ILogger? _logger;
 
@@ -20,15 +21,20 @@ namespace Zoltu.Nethermind.Plugin.PushPending
 		{
 			_nethermindApi = nethermindApi;
 			_logger = nethermindApi.LogManager.GetClassLogger();
-			if (_webSocketModule != null)
+			if (_pendingWebSocketModule != null)
 			{
 				_logger.Warn($"Attempted to initialize {Name} plugin twice, refusing to re-initialize.");
 				return;
 			}
-			var config = nethermindApi.Config<IPushPendingConfig>();
-			if (!config.Enabled)
+			if (_blockWebSocketModule != null)
 			{
-				_logger.Warn($"{Name}.Enabled configuration variable set to false, halting initialization of {Name} plugin.");
+				_logger.Warn($"Attempted to initialize {Name} plugin twice, refusing to re-initialize.");
+				return;
+			}
+			var config = nethermindApi.Config<IWebSocketPushConfig>();
+			if (!config.PendingEnabled && !config.BlockEnabled)
+			{
+				_logger.Warn($"{Name}.PendingEnabled or {Name}.BlockEnabled configuration variables set to false, halting initialization of {Name} plugin.");
 				return;
 			}
 			var initConfig = nethermindApi.Config<IInitConfig>();
@@ -44,18 +50,35 @@ namespace Zoltu.Nethermind.Plugin.PushPending
 				return;
 			}
 			var jsonSerializer = nethermindApi.EthereumJsonSerializer;
-			_webSocketModule = new WebSocketModule(_logger, jsonSerializer, config);
-			nethermindApi.WebSocketsManager.AddModule(_webSocketModule);
-			_logger.Info($"Subscribe to pending transactions by connecting to ws://{jsonRpcConfig.Host}:{jsonRpcConfig.WebSocketsPort}/{_webSocketModule.Name}");
+			if (config.PendingEnabled)
+			{
+				_pendingWebSocketModule = new PendingWebSocketModule(_logger, jsonSerializer, config);
+				nethermindApi.WebSocketsManager.AddModule(_pendingWebSocketModule);
+				_logger.Info($"Subscribe to pending transactions by connecting to ws://{jsonRpcConfig.Host}:{jsonRpcConfig.WebSocketsPort}/{_pendingWebSocketModule.Name}");
+			}
+			if (config.BlockEnabled)
+			{
+				_blockWebSocketModule = new BlockWebSocketModule(_logger, jsonSerializer, config);
+				nethermindApi.WebSocketsManager.AddModule(_blockWebSocketModule);
+				_logger.Info($"Subscribe to new blocks by connecting to ws://{jsonRpcConfig.Host}:{jsonRpcConfig.WebSocketsPort}/{_blockWebSocketModule.Name}");
+			}
 			await Task.CompletedTask;
 		}
 
 		public async Task InitNetworkProtocol()
 		{
-			if (_webSocketModule == null) return;
+			if (_pendingWebSocketModule == null && _blockWebSocketModule == null) return;
 			if (_nethermindApi == null || _logger == null) throw new Exception($"InitNetworkProtocol called on {Name} plugin before Init was called.");
-			if (_nethermindApi.TxPool == null) throw new Exception($"TxPool not instantiated, cannot finish initialization of {Name} plugin.");
-			_nethermindApi.TxPool.NewPending += (_, eventArgs) => _webSocketModule.Send(eventArgs.Transaction);
+			if (_pendingWebSocketModule != null)
+			{
+				if (_nethermindApi.TxPool == null) throw new Exception($"TxPool not instantiated, cannot finish initialization of {Name} plugin.");
+				_nethermindApi.TxPool.NewPending += (_, eventArgs) => _pendingWebSocketModule.Send(eventArgs.Transaction);
+			}
+			if (_blockWebSocketModule != null)
+			{
+				if (_nethermindApi.BlockTree == null) throw new Exception($"BlockTree not instantiated, cannot finish initialization of {Name} plugin.");
+				_nethermindApi.BlockTree.NewHeadBlock += (_, eventArgs) => _blockWebSocketModule.Send(eventArgs.Block);
+			}
 			await Task.CompletedTask;
 		}
 
@@ -64,7 +87,7 @@ namespace Zoltu.Nethermind.Plugin.PushPending
 		protected override void DisposeOnce()
 		{
 			// TODO: figure out a better way to dispose this asynchronously
-			if (_webSocketModule != null) { Task.Run(async () => await _webSocketModule.DisposeAsync()).RunSynchronously(); }
+			if (_pendingWebSocketModule != null) { Task.Run(async () => await _pendingWebSocketModule.DisposeAsync()).RunSynchronously(); }
 		}
 	}
 }

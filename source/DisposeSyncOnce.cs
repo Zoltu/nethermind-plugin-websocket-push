@@ -1,7 +1,7 @@
 using System;
 using System.Threading;
 
-namespace Zoltu.Nethermind.Plugin.PushPending
+namespace Zoltu.Nethermind.Plugin.WebSocketPush
 {
 	public abstract class DisposeSyncOnce : IDisposable
 	{

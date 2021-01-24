@@ -2,28 +2,24 @@ using System;
 using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
-using Nethermind.Core;
 using Nethermind.Logging;
-using Nethermind.Serialization.Json;
 using Nethermind.WebSockets;
 
-namespace Zoltu.Nethermind.Plugin.PushPending
+namespace Zoltu.Nethermind.Plugin.WebSocketPush
 {
-	public sealed class WebSocketClient : DisposeAsyncOnce, IWebSocketsClient
+	public abstract class WebSocketClient : DisposeAsyncOnce, IWebSocketsClient
 	{
 		public String Id { get; }
 
 		public String Client { get; }
 
 		private readonly ILogger _logger;
-		private readonly IJsonSerializer _jsonSerializer;
-		private readonly IPushPendingConfig _config;
+		private readonly IWebSocketPushConfig _config;
 		private readonly WebSocket _webSocket;
 
-		public WebSocketClient(ILogger logger, IJsonSerializer jsonSerializer, IPushPendingConfig config, WebSocket webSocket, String id, String client)
+		public WebSocketClient(ILogger logger, IWebSocketPushConfig config, WebSocket webSocket, String id, String client)
 		{
 			_logger = logger;
-			_jsonSerializer = jsonSerializer;
 			_config = config;
 			_webSocket = webSocket;
 			Id = id;
@@ -40,12 +36,6 @@ namespace Zoltu.Nethermind.Plugin.PushPending
 			await _webSocket.SendAsync(messageAsBytes, WebSocketMessageType.Text, true, CancellationToken.None);
 		}
 
-		public async Task Send(Transaction transaction)
-		{
-			var transactionAsString = _jsonSerializer.Serialize(transaction);
-			await SendRawAsync(transactionAsString);
-		}
-
 		protected override async ValueTask DisposeOnce()
 		{
 			try
@@ -58,7 +48,7 @@ namespace Zoltu.Nethermind.Plugin.PushPending
 			}
 			catch (Exception exception)
 			{
-				_logger.Error("Exception thrown while trying to cleanly close pending push websocket.", exception);
+				_logger.Error("Exception thrown while trying to cleanly close Push websocket.", exception);
 			}
 
 			_webSocket.Abort();

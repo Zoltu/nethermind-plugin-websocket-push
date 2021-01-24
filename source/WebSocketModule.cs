@@ -6,24 +6,23 @@ using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
-using Nethermind.Core;
 using Nethermind.Logging;
 using Nethermind.Serialization.Json;
 using Nethermind.WebSockets;
 
-namespace Zoltu.Nethermind.Plugin.PushPending
+namespace Zoltu.Nethermind.Plugin.WebSocketPush
 {
-	public sealed class WebSocketModule : DisposeAsyncOnce, IWebSocketsModule
+	public abstract class WebSocketModule<T> : DisposeAsyncOnce, IWebSocketsModule where T : IWebSocketsClient, IAsyncDisposable
 	{
-		public String Name => "pending";
+		public abstract String Name { get; }
 
 		private readonly ILogger _logger;
 		private readonly IJsonSerializer _jsonSerializer;
-		private readonly IPushPendingConfig _config;
+		private readonly IWebSocketPushConfig _config;
 		private UInt32 _lastId;
-		private readonly ConcurrentDictionary<String, WebSocketClient> _clients = new();
+		protected readonly ConcurrentDictionary<String, T> _clients = new();
 
-		public WebSocketModule(ILogger logger, IJsonSerializer jsonSerializer, IPushPendingConfig config)
+		public WebSocketModule(ILogger logger, IJsonSerializer jsonSerializer, IWebSocketPushConfig config)
 		{
 			_logger = logger;
 			_jsonSerializer = jsonSerializer;
@@ -36,18 +35,18 @@ namespace Zoltu.Nethermind.Plugin.PushPending
 		{
 			_logger.Info($"Instantiating pending push client: '{clientName}'.");
 			var id = Interlocked.Increment(ref _lastId).ToString(CultureInfo.InvariantCulture);
-			var client = new WebSocketClient(_logger, _jsonSerializer, _config, webSocket, id, clientName);
+			var client = Create(_logger, _jsonSerializer, _config, webSocket, id, clientName);
 			_ = _clients.TryAdd(client.Id, client);
 			return client;
 		}
+
+		protected abstract T Create(ILogger logger, IJsonSerializer jsonSerializer, IWebSocketPushConfig config, WebSocket webSocket, String id, String client);
 
 		public void RemoveClient(String clientId) => _clients.TryRemove(clientId, out _);
 
 		public Task SendAsync(WebSocketsMessage message) => Task.WhenAll(_clients.Values.Select(client => client.SendAsync(message)));
 
 		public Task SendRawAsync(String message) => Task.WhenAll(_clients.Values.Select(client => client.SendRawAsync(message)));
-
-		public Task Send(Transaction transaction) => Task.WhenAll(_clients.Values.Select(client => client.Send(transaction)));
 
 		protected override async ValueTask DisposeOnce() => await Task.WhenAll(_clients.Select(client => client.Value.DisposeAsync().AsTask()));
 	}
