@@ -7,6 +7,10 @@ indent_style = tab
 insert_final_newline = true
 trim_trailing_whitespace = true
 
+[*.yml]
+indent_style = space
+indent_size = 2
+
 [*.cs]
 csharp_style_var_for_built_in_types = true
 csharp_style_var_when_type_is_apparent = true

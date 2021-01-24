@@ -43,18 +43,19 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
+      - name: Set IMAGE_TAG
+        run: echo "IMAGE_TAG=$(echo ${{ github.repository }} | tr '[A-Z]' '[a-z]')" >> $GITHUB_ENV
+
       - name: Build image
-        run: docker build . --file Dockerfile --tag ${{ github.repository }}
+        run: |
+          docker build . --file Dockerfile --tag $IMAGE_TAG
 
       - name: Log into registry
         run: echo "${{ secrets.ContainerRegistry }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Push image
         run: |
-          IMAGE_ID=ghcr.io/${{ github.repository }}
-
-          # Change all uppercase to lowercase
-          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+          IMAGE_ID=ghcr.io/$IMAGE_TAG
 
           # Strip git ref prefix from version
           VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
