@@ -34,7 +34,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			var config = nethermindApi.Config<IWebSocketPushConfig>();
 			if (!config.PendingEnabled && !config.BlockEnabled)
 			{
-				_logger.Warn($"{Name}.PendingEnabled or {Name}.BlockEnabled configuration variables set to false, halting initialization of {Name} plugin.");
+				_logger.Warn($"{Name}.PendingEnabled and {Name}.BlockEnabled configuration variables set to false, halting initialization of {Name} plugin.");
 				return;
 			}
 			var initConfig = nethermindApi.Config<IInitConfig>();
