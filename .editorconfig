@@ -19,6 +19,7 @@ csharp_prefer_braces = false
 dotnet_style_predefined_type_for_locals_parameters_members = false
 dotnet_style_predefined_type_for_member_access = false
 csharp_style_expression_bodied_methods = when_on_single_line
+csharp_style_expression_bodied_constructors = when_on_single_line
 
 # allow overrides to have different parameter names from base classes, because some library authors are bad at naming
 dotnet_diagnostic.CA1725.severity = none

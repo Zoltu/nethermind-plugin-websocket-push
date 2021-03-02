@@ -20,6 +20,9 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 		public async Task Init(INethermindApi nethermindApi)
 		{
 			_nethermindApi = nethermindApi;
+			if (nethermindApi.BlockTree == null) throw new Exception($"NethermindApi.BlockTree was null during {Name} plugin initialization.");
+			if (nethermindApi.TransactionProcessor == null) throw new Exception($"NethermindApi.TransactionProcessor was null during {Name} plugin initialization.");
+
 			_logger = nethermindApi.LogManager.GetClassLogger();
 			if (_pendingWebSocketModule != null)
 			{
@@ -52,7 +55,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			var jsonSerializer = nethermindApi.EthereumJsonSerializer;
 			if (config.PendingEnabled)
 			{
-				_pendingWebSocketModule = new PendingWebSocketModule(_logger, jsonSerializer, config);
+				_pendingWebSocketModule = new PendingWebSocketModule(_logger, jsonSerializer, nethermindApi.BlockTree, nethermindApi.TransactionProcessor, config);
 				nethermindApi.WebSocketsManager.AddModule(_pendingWebSocketModule);
 				_logger.Info($"Subscribe to pending transactions by connecting to ws://{jsonRpcConfig.Host}:{jsonRpcConfig.WebSocketsPort}/{_pendingWebSocketModule.Name}");
 			}

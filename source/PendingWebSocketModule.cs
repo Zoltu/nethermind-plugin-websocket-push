@@ -2,7 +2,9 @@ using System;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Threading.Tasks;
+using Nethermind.Blockchain;
 using Nethermind.Core;
+using Nethermind.Evm;
 using Nethermind.Logging;
 using Nethermind.Serialization.Json;
 
@@ -12,9 +14,16 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 	{
 		public override String Name => "pending";
 
-		public PendingWebSocketModule(ILogger logger, IJsonSerializer jsonSerializer, IWebSocketPushConfig config) : base(logger, jsonSerializer, config) { }
+		private readonly IBlockTree _blockTree;
+		private readonly ITransactionProcessor _transactionProcessor;
 
-		protected override PendingWebSocketClient Create(ILogger logger, IJsonSerializer jsonSerializer, IWebSocketPushConfig config, WebSocket webSocket, String id, String client) => new(logger, jsonSerializer, config, webSocket, id, client);
+		public PendingWebSocketModule(ILogger logger, IJsonSerializer jsonSerializer, IBlockTree blockTree, ITransactionProcessor transactionProcessor, IWebSocketPushConfig config) : base(logger, jsonSerializer, config)
+		{
+			_blockTree = blockTree;
+			_transactionProcessor = transactionProcessor;
+		}
+
+		protected override PendingWebSocketClient Create(ILogger logger, IJsonSerializer jsonSerializer, IWebSocketPushConfig config, WebSocket webSocket, String id, String client) => new(logger, jsonSerializer, _blockTree, _transactionProcessor, config, webSocket, id, client);
 
 		public Task Send(Transaction transaction) => Task.WhenAll(_clients.Values.Select(client => client.Send(transaction)));
 	}

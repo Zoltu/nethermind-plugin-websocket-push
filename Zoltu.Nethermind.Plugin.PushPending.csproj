@@ -6,6 +6,7 @@
 		<Deterministic>true</Deterministic>
 		<EmbedAllSources>true</EmbedAllSources>
 		<AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 	</PropertyGroup>
 	<ItemGroup>
 		<SourceRoot Include="$(MSBuildProjectDirectory)\" MappedPath="/_/"/>

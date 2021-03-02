@@ -13,7 +13,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 
 		public String Client { get; }
 
-		private readonly ILogger _logger;
+		internal readonly ILogger _logger;
 		private readonly IWebSocketPushConfig _config;
 		private readonly WebSocket _webSocket;
 
@@ -26,7 +26,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			Client = client;
 		}
 
-		public async Task ReceiveAsync(Memory<Byte> data) => await SendRawAsync("WebSocket message received, but this endpoint is not configured to handle any incoming messages.");
+		public virtual async Task ReceiveAsync(Memory<Byte> data) => await SendRawAsync("WebSocket message received, but this endpoint is not configured to handle any incoming messages.");
 
 		public Task SendAsync(WebSocketsMessage message) => throw new NotImplementedException();
 
