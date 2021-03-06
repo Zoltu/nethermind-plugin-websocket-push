@@ -52,7 +52,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			}
 
 			_webSocket.Abort();
-			_webSocket.Dispose();
+			// disposal of the WebSocket is handled by AspNet
 		}
 	}
 }

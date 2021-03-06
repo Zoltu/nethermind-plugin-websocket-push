@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Net.WebSockets;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Nethermind.Blockchain;
 using Nethermind.Core;
@@ -21,7 +19,6 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 	public sealed class PendingWebSocketClient : WebSocketClient
 	{
 		private readonly IJsonSerializer _nethermindJsonSerializer;
-		private readonly JsonSerializerOptions _jsonSerializerOptions = new() { ReadCommentHandling = JsonCommentHandling.Skip, AllowTrailingCommas = true };
 		private readonly IBlockTree _blockTree;
 		private readonly ITransactionProcessor _transactionProcessor;
 
@@ -39,8 +36,9 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			try
 			{
 				var dataString = System.Text.Encoding.UTF8.GetString(data.Span);
-				var filterOptions = JsonSerializer.Deserialize<FilteredExecutionRequest>(dataString, _jsonSerializerOptions);
+				var filterOptions = _nethermindJsonSerializer.Deserialize<FilteredExecutionRequest>(dataString);
 				_filters = _filters.Add(filterOptions);
+				_logger.Info($"New Pending Filter added: {filterOptions.Contract}.{filterOptions.Signature}");
 				await Task.CompletedTask;
 			}
 			catch (Exception exception)
@@ -74,6 +72,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			await Task.Run(() =>
 			{
 				var head = _blockTree.Head;
+				if (head == null) throw new Exception($"BlockTree Head was null.");
 				var blockHeader = new BlockHeader(head.Hash!, Keccak.EmptyTreeHash, Address.Zero, head.Difficulty, head.Number + 1, head.GasLimit, head.Timestamp + 1, Array.Empty<Byte>());
 				_transactionProcessor.CallAndRestore(transaction, blockHeader, tracer);
 			});
@@ -93,22 +92,26 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 
 		private async Task SendFilterMatchTransaction(Transaction transaction, ImmutableArray<FilterMatch> matches)
 		{
-			var transactionAsString = _nethermindJsonSerializer.Serialize((Transaction: transaction, FilterMatches: matches));
+			var transactionAsString = _nethermindJsonSerializer.Serialize(new FilterMatchMessage(transaction, matches));
 			await SendRawAsync(transactionAsString);
 		}
 
-		private struct FilteredExecutionRequest
+		private readonly struct FilteredExecutionRequest
 		{
-			[JsonConverter(typeof(AddressConverter))]
-			public Address Contract { get; }
+			public readonly Address Contract { get; }
 
-			public UInt32 Signature { get; }
+			public readonly UInt32 Signature { get; }
 
-			[JsonConverter(typeof(UInt256Converter))]
-			public UInt256 GasLimit { get; }
+			public readonly UInt256 GasLimit { get; }
 
-			[JsonConstructor]
 			public FilteredExecutionRequest(Address contract, UInt32 signature, UInt256 gasLimit) => (Contract, Signature, GasLimit) = (contract, signature, gasLimit);
+		}
+
+		private readonly struct FilterMatchMessage
+		{
+			public readonly Transaction Transaction;
+			public readonly ImmutableArray<FilterMatch> FilterMatches;
+			public FilterMatchMessage(Transaction transaction, ImmutableArray<FilterMatch> filterMatches) => (Transaction, FilterMatches) = (transaction, filterMatches);
 		}
 
 		private readonly struct FilterMatch
@@ -158,16 +161,17 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 
 			public Boolean IsTracingBlockHash => false;
 
-			public void MarkAsFailed(Address recipient, Int64 gasSpent, Byte[] output, String error, Keccak stateRoot) { }
-			public void MarkAsSuccess(Address recipient, Int64 gasSpent, Byte[] output, LogEntry[] logs, Keccak stateRoot) { }
+			public Boolean IsTracingStorage => throw new NotImplementedException();
+
+			public void MarkAsFailed(Address recipient, Int64 gasSpent, Byte[] output, String error, Keccak? stateRoot) { }
+			public void MarkAsSuccess(Address recipient, Int64 gasSpent, Byte[] output, LogEntry[] logs, Keccak? stateRoot) { }
 			public void ReportAccountRead(Address address) { }
 			public void ReportAction(Int64 gas, UInt256 value, Address from, Address to, Byte[] input, ExecutionType callType, Boolean isPrecompileCall)
 			{
+				if (!System.Diagnostics.Debugger.Launch()) Console.WriteLine($"Failed to launch debugger.");
 				if (input.Length < 4) return;
 				var callSignature = (input[0] << 3) & (input[1] << 2) & (input[2] << 1) & input[3];
-				var matchedFilters = _filters
-					.Where(filter => filter.Contract == from)
-					.Where(filter => filter.Signature == callSignature);
+				if (!_filters.Any(filter => filter.Contract == to && filter.Signature == callSignature)) return;
 				FilterMatches = FilterMatches.Add(new FilterMatch(gas, value, from, to, input, callType));
 			}
 			public void ReportActionEnd(Int64 gas, Byte[] output) { }
@@ -176,7 +180,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			public void ReportBalanceChange(Address address, UInt256? before, UInt256? after) { }
 			public void ReportBlockHash(Keccak blockHash) { }
 			public void ReportByteCode(Byte[] byteCode) { }
-			public void ReportCodeChange(Address address, Byte[] before, Byte[] after) { }
+			public void ReportCodeChange(Address address, Byte[]? before, Byte[]? after) { }
 			public void ReportExtraGasPressure(Int64 extraGasPressure) { }
 			public void ReportGasUpdateForVmTrace(Int64 refund, Int64 gasAvailable) { }
 			public void ReportMemoryChange(Int64 offset, in ReadOnlySpan<Byte> data) { }
@@ -188,10 +192,11 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			public void ReportStackPush(in ReadOnlySpan<Byte> stackItem) { }
 			public void ReportStorageChange(in ReadOnlySpan<Byte> key, in ReadOnlySpan<Byte> value) { }
 			public void ReportStorageChange(StorageCell storageCell, Byte[] before, Byte[] after) { }
+			public void ReportStorageRead(StorageCell storageCell) => throw new NotImplementedException();
 			public void SetOperationMemory(List<String> memoryTrace) { }
 			public void SetOperationMemorySize(UInt64 newSize) { }
 			public void SetOperationStack(List<String> stackTrace) { }
-			public void SetOperationStorage(Address address, UInt256 storageIndex, Byte[] newValue, Byte[] currentValue) { }
+			public void SetOperationStorage(Address address, UInt256 storageIndex, ReadOnlySpan<Byte> newValue, ReadOnlySpan<Byte> currentValue) => throw new NotImplementedException();
 			public void StartOperation(Int32 depth, Int64 gas, Instruction opcode, Int32 pc) { }
 		}
 	}

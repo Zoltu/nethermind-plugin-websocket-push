@@ -3,94 +3,80 @@ using System.Threading.Tasks;
 using Nethermind.Api;
 using Nethermind.Api.Extensions;
 using Nethermind.JsonRpc;
-using Nethermind.Logging;
 
 namespace Zoltu.Nethermind.Plugin.WebSocketPush
 {
-	public sealed class Plugin : DisposeSyncOnce, INethermindPlugin
+	public sealed class Plugin : DisposeAsyncOnce, INethermindPlugin
 	{
 		public String Name => "WebSocketPush";
 		public String Description => "Pushes all new pending transactions to any connected WebSocket clients.";
 		public String Author => "Micah";
+		private INethermindApi? _nethermindApi;
 		private PendingWebSocketModule? _pendingWebSocketModule;
 		private BlockWebSocketModule? _blockWebSocketModule;
-		private INethermindApi? _nethermindApi;
-		private ILogger? _logger;
+		private Boolean _initialized;
 
 		public async Task Init(INethermindApi nethermindApi)
 		{
 			_nethermindApi = nethermindApi;
-			if (nethermindApi.BlockTree == null) throw new Exception($"NethermindApi.BlockTree was null during {Name} plugin initialization.");
-			if (nethermindApi.TransactionProcessor == null) throw new Exception($"NethermindApi.TransactionProcessor was null during {Name} plugin initialization.");
-
-			_logger = nethermindApi.LogManager.GetClassLogger();
-			if (_pendingWebSocketModule != null)
-			{
-				_logger.Warn($"Attempted to initialize {Name} plugin twice, refusing to re-initialize.");
-				return;
-			}
-			if (_blockWebSocketModule != null)
-			{
-				_logger.Warn($"Attempted to initialize {Name} plugin twice, refusing to re-initialize.");
-				return;
-			}
-			var config = nethermindApi.Config<IWebSocketPushConfig>();
-			if (!config.PendingEnabled && !config.BlockEnabled)
-			{
-				_logger.Warn($"{Name}.PendingEnabled and {Name}.BlockEnabled configuration variables set to false, halting initialization of {Name} plugin.");
-				return;
-			}
-			var initConfig = nethermindApi.Config<IInitConfig>();
-			if (!initConfig.WebSocketsEnabled)
-			{
-				_logger.Warn($"Init.WebSocketsEnabled configuration variable set to false, halting initialization of {Name} plugin.");
-				return;
-			}
-			var jsonRpcConfig = nethermindApi.Config<IJsonRpcConfig>();
-			if (!jsonRpcConfig.Enabled)
-			{
-				_logger.Warn($"JsonRpc.Enabled configuration variable set to false, halting initialization of {Name} plugin.");
-				return;
-			}
-			var jsonSerializer = nethermindApi.EthereumJsonSerializer;
-			if (config.PendingEnabled)
-			{
-				_pendingWebSocketModule = new PendingWebSocketModule(_logger, jsonSerializer, nethermindApi.BlockTree, nethermindApi.TransactionProcessor, config);
-				nethermindApi.WebSocketsManager.AddModule(_pendingWebSocketModule);
-				_logger.Info($"Subscribe to pending transactions by connecting to ws://{jsonRpcConfig.Host}:{jsonRpcConfig.WebSocketsPort}/{_pendingWebSocketModule.Name}");
-			}
-			if (config.BlockEnabled)
-			{
-				_blockWebSocketModule = new BlockWebSocketModule(_logger, jsonSerializer, config);
-				nethermindApi.WebSocketsManager.AddModule(_blockWebSocketModule);
-				_logger.Info($"Subscribe to new blocks by connecting to ws://{jsonRpcConfig.Host}:{jsonRpcConfig.WebSocketsPort}/{_blockWebSocketModule.Name}");
-			}
 			await Task.CompletedTask;
 		}
 
 		public async Task InitNetworkProtocol()
 		{
-			if (_pendingWebSocketModule == null && _blockWebSocketModule == null) return;
-			if (_nethermindApi == null || _logger == null) throw new Exception($"InitNetworkProtocol called on {Name} plugin before Init was called.");
-			if (_pendingWebSocketModule != null)
+			if (_initialized) throw new Exception($"InitNetworkProtocol called twice on {Name} plugin.");
+			_initialized = true;
+			if (_nethermindApi == null) throw new Exception($"InitNetworkProtocol called on {Name} plugin before Init was called.");
+			if (_nethermindApi.BlockTree == null) throw new Exception($"NethermindApi.BlockTree was null during {Name} plugin initialization.");
+			if (_nethermindApi.TransactionProcessor == null) throw new Exception($"NethermindApi.TransactionProcessor was null during {Name} plugin initialization.");
+			if (_nethermindApi.TxPool == null) throw new Exception($"NethermindApi.TxPool was null during {Name} plugin initialization.");
+			if (_nethermindApi.BlockTree == null) throw new Exception($"NethermindApi.BlockTree was null during {Name} plugin initialization.");
+
+			var logger = _nethermindApi.LogManager.GetClassLogger();
+			var config = _nethermindApi.Config<IWebSocketPushConfig>();
+			if (!config.PendingEnabled && !config.BlockEnabled)
 			{
-				if (_nethermindApi.TxPool == null) throw new Exception($"TxPool not instantiated, cannot finish initialization of {Name} plugin.");
-				_nethermindApi.TxPool.NewPending += (_, eventArgs) => _pendingWebSocketModule.Send(eventArgs.Transaction);
+				logger.Warn($"{Name}.PendingEnabled and {Name}.BlockEnabled configuration variables set to false, halting initialization of {Name} plugin.");
+				return;
 			}
-			if (_blockWebSocketModule != null)
+			var initConfig = _nethermindApi.Config<IInitConfig>();
+			if (!initConfig.WebSocketsEnabled)
 			{
-				if (_nethermindApi.BlockTree == null) throw new Exception($"BlockTree not instantiated, cannot finish initialization of {Name} plugin.");
+				logger.Warn($"Init.WebSocketsEnabled configuration variable set to false, halting initialization of {Name} plugin.");
+				return;
+			}
+			var jsonRpcConfig = _nethermindApi.Config<IJsonRpcConfig>();
+			if (!jsonRpcConfig.Enabled)
+			{
+				logger.Warn($"JsonRpc.Enabled configuration variable set to false, halting initialization of {Name} plugin.");
+				return;
+			}
+			var jsonSerializer = _nethermindApi.EthereumJsonSerializer;
+			if (config.PendingEnabled)
+			{
+				_pendingWebSocketModule = new PendingWebSocketModule(logger, jsonSerializer, _nethermindApi.BlockTree, _nethermindApi.TransactionProcessor, config);
+				_nethermindApi.WebSocketsManager.AddModule(_pendingWebSocketModule);
+				_nethermindApi.TxPool.NewPending += (_, eventArgs) => _pendingWebSocketModule.Send(eventArgs.Transaction);
+				logger.Info($"Subscribe to pending transactions by connecting to ws://{jsonRpcConfig.Host}:{jsonRpcConfig.WebSocketsPort}/{_pendingWebSocketModule.Name}");
+			}
+			if (config.BlockEnabled)
+			{
+				_blockWebSocketModule = new BlockWebSocketModule(logger, jsonSerializer, config);
+				_nethermindApi.WebSocketsManager.AddModule(_blockWebSocketModule);
 				_nethermindApi.BlockTree.NewHeadBlock += (_, eventArgs) => _blockWebSocketModule.Send(eventArgs.Block);
+				logger.Info($"Subscribe to new blocks by connecting to ws://{jsonRpcConfig.Host}:{jsonRpcConfig.WebSocketsPort}/{_blockWebSocketModule.Name}");
 			}
 			await Task.CompletedTask;
 		}
 
 		public Task InitRpcModules() => Task.CompletedTask;
 
-		protected override void DisposeOnce()
+		protected override async ValueTask DisposeOnce()
 		{
-			// TODO: figure out a better way to dispose this asynchronously
-			if (_pendingWebSocketModule != null) { Task.Run(async () => await _pendingWebSocketModule.DisposeAsync()).RunSynchronously(); }
+			if (_pendingWebSocketModule != null)
+			{
+				await _pendingWebSocketModule.DisposeAsync();
+			}
 		}
 	}
 }
