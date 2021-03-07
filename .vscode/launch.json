@@ -1,0 +1,17 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Debug Test",
+			"type": "coreclr",
+			"request": "launch",
+			"preLaunchTask": "build - test",
+			"program": "${workspaceFolder}/test/bin/Debug/Zoltu.Nethermind.Plugin.WebSocket.Push.Test.dll",
+			"args": [],
+			"cwd": "${workspaceFolder}/test",
+			// For more information about the 'console' field, see https://aka.ms/VSCode-CS-LaunchJson-Console
+			"console": "internalConsole",
+			"stopAtEntry": false
+		},
+	]
+}

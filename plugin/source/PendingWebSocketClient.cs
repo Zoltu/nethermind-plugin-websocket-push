@@ -96,7 +96,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			await SendRawAsync(transactionAsString);
 		}
 
-		private readonly struct FilteredExecutionRequest
+		public readonly struct FilteredExecutionRequest
 		{
 			public readonly Address Contract { get; }
 
@@ -107,14 +107,14 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			public FilteredExecutionRequest(Address contract, UInt32 signature, UInt256 gasLimit) => (Contract, Signature, GasLimit) = (contract, signature, gasLimit);
 		}
 
-		private readonly struct FilterMatchMessage
+		public readonly struct FilterMatchMessage
 		{
 			public readonly Transaction Transaction;
 			public readonly ImmutableArray<FilterMatch> FilterMatches;
 			public FilterMatchMessage(Transaction transaction, ImmutableArray<FilterMatch> filterMatches) => (Transaction, FilterMatches) = (transaction, filterMatches);
 		}
 
-		private readonly struct FilterMatch
+		public readonly struct FilterMatch
 		{
 			public readonly Int64 Gas;
 			public readonly UInt256 Value;
@@ -128,13 +128,12 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 				Value = value;
 				From = from;
 				To = to;
-				// TODO: investigate whether we need to do a clone of input here rather than a reference copy
-				Input = input;
+				Input = input.ToArray();
 				CallType = callType;
 			}
 		}
 
-		private sealed class Tracer : ITxTracer
+		public sealed class Tracer : ITxTracer
 		{
 			private readonly ImmutableArray<FilteredExecutionRequest> _filters;
 			public ImmutableArray<FilterMatch> FilterMatches { get; private set; } = ImmutableArray<FilterMatch>.Empty;
@@ -168,9 +167,8 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			public void ReportAccountRead(Address address) { }
 			public void ReportAction(Int64 gas, UInt256 value, Address from, Address to, Byte[] input, ExecutionType callType, Boolean isPrecompileCall)
 			{
-				if (!System.Diagnostics.Debugger.Launch()) Console.WriteLine($"Failed to launch debugger.");
 				if (input.Length < 4) return;
-				var callSignature = (input[0] << 3) & (input[1] << 2) & (input[2] << 1) & input[3];
+				var callSignature = BitConverter.ToUInt32(BitConverter.IsLittleEndian ? input.Take(4).Reverse().ToArray() : input, 0);
 				if (!_filters.Any(filter => filter.Contract == to && filter.Signature == callSignature)) return;
 				FilterMatches = FilterMatches.Add(new FilterMatch(gas, value, from, to, input, callType));
 			}

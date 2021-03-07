@@ -10,9 +10,9 @@
 		<ProduceReferenceAssembly>false</ProduceReferenceAssembly>
 	</PropertyGroup>
 	<ItemGroup>
-		<SourceRoot Include="$(MSBuildProjectDirectory)\" MappedPath="/_/"/>
+		<SourceRoot Include="$(MSBuildProjectDirectory)\" MappedPath="/_/" />
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
-		<Reference Include=".\references\*.dll">
+		<Reference Include="..\references\*.dll">
 			<Private>false</Private>
 		</Reference>
 	</ItemGroup>
