@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Net.WebSockets;
 using System.Threading.Tasks;
 using Nethermind.Core;
@@ -23,7 +24,14 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 				ParentHash = block.ParentHash!,
 				Hash = block.Hash!,
 				block.Number,
-				block.Timestamp
+				block.Timestamp,
+				Transactions = block.Transactions?.Select(transaction => new
+				{
+					transaction.Hash,
+					Signer = transaction.SenderAddress,
+					transaction.Nonce,
+					transaction.GasPrice,
+				})
 			};
 			var transactionAsString = _jsonSerializer.Serialize(simpleBlock);
 			await SendRawAsync(transactionAsString);
