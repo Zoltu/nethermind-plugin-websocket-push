@@ -25,6 +25,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 				Hash = block.Hash!,
 				block.Number,
 				block.Timestamp,
+				block.Bloom,
 				Transactions = block.Transactions?.Select(transaction => new
 				{
 					transaction.Hash,
