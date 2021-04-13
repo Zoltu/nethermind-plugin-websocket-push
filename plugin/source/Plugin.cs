@@ -63,6 +63,10 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			{
 				_blockWebSocketModule = new BlockWebSocketModule(logger, jsonSerializer, config);
 				_nethermindApi.WebSocketsManager.AddModule(_blockWebSocketModule);
+				// TODO: see BlockchainProcessor.cs:201 (do we need to do this?) and BlockchainProcessor.cs:269
+				// TODO: use a readonly blockchain processor
+				// TODO: be careful to not collide/race with actual block processor which may be building caches while processing this block in parallel
+				// _nethermindApi.BlockTree.NewBestSuggestedBlock += (_, eventArgs) => _blockWebSocketModule.ProcessBlockWithTracer(eventArgs.Block);
 				_nethermindApi.BlockTree.NewHeadBlock += (_, eventArgs) => _blockWebSocketModule.Send(eventArgs.Block);
 				logger.Info($"Subscribe to new blocks by connecting to ws://{jsonRpcConfig.Host}:{jsonRpcConfig.WebSocketsPort}/{_blockWebSocketModule.Name}");
 			}

@@ -12,7 +12,6 @@ using Nethermind.Evm.Tracing;
 using Nethermind.Int256;
 using Nethermind.Logging;
 using Nethermind.Serialization.Json;
-using Nethermind.State;
 
 namespace Zoltu.Nethermind.Plugin.WebSocketPush
 {
@@ -131,15 +130,15 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			public readonly UInt256 Value;
 			public readonly Address From;
 			public readonly Address To;
-			public readonly Byte[] Input;
+			public readonly ReadOnlyMemory<Byte> Input;
 			public readonly ExecutionType CallType;
-			public FilterMatch(Int64 gas, UInt256 value, Address from, Address to, Byte[] input, ExecutionType callType)
+			public FilterMatch(Int64 gas, UInt256 value, Address from, Address to, ReadOnlyMemory<Byte> input, ExecutionType callType)
 			{
 				Gas = gas;
 				Value = value;
 				From = from;
 				To = to;
-				Input = input.ToArray();
+				Input = input;
 				CallType = callType;
 			}
 		}
@@ -149,46 +148,37 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			private readonly ImmutableArray<FilteredExecutionRequest> _filters;
 			public ImmutableArray<FilterMatch> FilterMatches { get; private set; } = ImmutableArray<FilterMatch>.Empty;
 			public ImmutableArray<LogEntry> Logs { get; private set; } = ImmutableArray<LogEntry>.Empty;
-
 			public Tracer(ImmutableArray<FilteredExecutionRequest> filters) => _filters = filters;
 
 			public Boolean IsTracingReceipt => true;
-
+			public Boolean IsTracingAccess => false;
 			public Boolean IsTracingActions => true;
-
 			public Boolean IsTracingOpLevelStorage => false;
-
 			public Boolean IsTracingMemory => false;
-
 			public Boolean IsTracingInstructions => false;
-
 			public Boolean IsTracingRefunds => false;
-
 			public Boolean IsTracingCode => false;
-
 			public Boolean IsTracingStack => false;
-
 			public Boolean IsTracingState => false;
-
 			public Boolean IsTracingBlockHash => false;
-
-			public Boolean IsTracingStorage => throw new NotImplementedException();
+			public Boolean IsTracingStorage => false;
 
 			public void MarkAsFailed(Address recipient, Int64 gasSpent, Byte[] output, String error, Keccak? stateRoot) { }
 			public void MarkAsSuccess(Address recipient, Int64 gasSpent, Byte[] output, LogEntry[] logs, Keccak? stateRoot)
 			{
 				Logs = logs.ToImmutableArray();
 			}
+			public void ReportAccess(IReadOnlySet<Address> accessedAddresses, IReadOnlySet<StorageCell> accessedStorageCells) {}
 			public void ReportAccountRead(Address address) { }
-			public void ReportAction(Int64 gas, UInt256 value, Address from, Address to, Byte[] input, ExecutionType callType, Boolean isPrecompileCall)
+			public void ReportAction(Int64 gas, UInt256 value, Address from, Address to, ReadOnlyMemory<Byte> input, ExecutionType callType, Boolean isPrecompileCall = false)
 			{
 				if (input.Length < 4) return;
-				var callSignature = BitConverter.ToUInt32(BitConverter.IsLittleEndian ? input.Take(4).Reverse().ToArray() : input, 0);
+				var callSignature = BitConverter.ToUInt32(BitConverter.IsLittleEndian ? input.Slice(0, 4).ToArray().Reverse().ToArray() : input.Slice(0, 4).ToArray(), 0);
 				if (!_filters.Any(filter => filter.Contract == to && filter.Signature == callSignature)) return;
 				FilterMatches = FilterMatches.Add(new FilterMatch(gas, value, from, to, input, callType));
 			}
-			public void ReportActionEnd(Int64 gas, Byte[] output) { }
-			public void ReportActionEnd(Int64 gas, Address deploymentAddress, Byte[] deployedCode) { }
+			public void ReportActionEnd(Int64 gas, ReadOnlyMemory<Byte> output) {}
+			public void ReportActionEnd(Int64 gas, Address deploymentAddress, ReadOnlyMemory<Byte> deployedCode) {}
 			public void ReportActionError(EvmExceptionType evmExceptionType) { }
 			public void ReportBalanceChange(Address address, UInt256? before, UInt256? after) { }
 			public void ReportBlockHash(Keccak blockHash) { }
