@@ -3,6 +3,7 @@ using System.Linq;
 using System.Net.WebSockets;
 using System.Threading.Tasks;
 using Nethermind.Core;
+using Nethermind.JsonRpc.Modules.Eth;
 using Nethermind.Logging;
 using Nethermind.Serialization.Json;
 
@@ -19,26 +20,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 
 		public async Task Send(Block block)
 		{
-			var simpleBlock = new
-			{
-				ParentHash = block.ParentHash!,
-				Hash = block.Hash!,
-				block.Number,
-				block.Author,
-				block.Timestamp,
-				block.Bloom,
-				Transactions = block.Transactions?.Select(transaction => new
-				{
-					transaction.Hash,
-					Signer = transaction.SenderAddress,
-					transaction.Nonce,
-					transaction.GasLimit,
-					transaction.GasPrice,
-					transaction.To,
-					transaction.Data,
-				})
-			};
-			var transactionAsString = _jsonSerializer.Serialize(simpleBlock);
+			var transactionAsString = _jsonSerializer.Serialize(new BlockForRpc(block, true));
 			await SendRawAsync(transactionAsString);
 		}
 	}
