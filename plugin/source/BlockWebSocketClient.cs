@@ -24,6 +24,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 				ParentHash = block.ParentHash!,
 				Hash = block.Hash!,
 				block.Number,
+				block.Author,
 				block.Timestamp,
 				block.Bloom,
 				Transactions = block.Transactions?.Select(transaction => new
@@ -31,7 +32,10 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 					transaction.Hash,
 					Signer = transaction.SenderAddress,
 					transaction.Nonce,
+					transaction.GasLimit,
 					transaction.GasPrice,
+					transaction.To,
+					transaction.Data,
 				})
 			};
 			var transactionAsString = _jsonSerializer.Serialize(simpleBlock);
