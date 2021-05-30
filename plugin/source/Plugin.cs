@@ -56,7 +56,17 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			{
 				_pendingWebSocketModule = new PendingWebSocketModule(logger, jsonSerializer, _nethermindApi.BlockTree, _nethermindApi.TransactionProcessor, config);
 				_nethermindApi.WebSocketsManager.AddModule(_pendingWebSocketModule);
-				_nethermindApi.TxPool.NewPending += (_, eventArgs) => _pendingWebSocketModule.Send(eventArgs.Transaction);
+				_nethermindApi.TxPool.NewPending += (_, eventArgs) => Task.Run(() =>
+				{
+					try
+					{
+						_ = _pendingWebSocketModule.Send(eventArgs.Transaction);
+					}
+					catch (Exception exception)
+					{
+						logger.Error($"Plugin failed to process NewPending.", exception);
+					}
+				});
 				logger.Info($"Subscribe to pending transactions by connecting to ws://{jsonRpcConfig.Host}:{jsonRpcConfig.WebSocketsPort}/{_pendingWebSocketModule.Name}");
 			}
 			if (config.BlockEnabled)
@@ -67,9 +77,8 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 				// TODO: use a readonly blockchain processor
 				// TODO: be careful to not collide/race with actual block processor which may be building caches while processing this block in parallel
 				// _nethermindApi.BlockTree.NewBestSuggestedBlock += (_, eventArgs) => _blockWebSocketModule.ProcessBlockWithTracer(eventArgs.Block);
-				_nethermindApi.BlockTree.NewHeadBlock += (_, eventArgs) =>
+				_nethermindApi.BlockTree.NewHeadBlock += (_, eventArgs) => Task.Run(() =>
 				{
-					// Nethermind gets into a bad state if the exception bubbles out of this handler, so we need to make sure to swallow it here
 					try
 					{
 						_ = _blockWebSocketModule.Send(eventArgs.Block!);
@@ -78,7 +87,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 					{
 						logger.Error($"Plugin failed to process NewHeadBlock.", exception);
 					}
-				};
+				});
 				logger.Info($"Subscribe to new blocks by connecting to ws://{jsonRpcConfig.Host}:{jsonRpcConfig.WebSocketsPort}/{_blockWebSocketModule.Name}");
 			}
 			await Task.CompletedTask;
