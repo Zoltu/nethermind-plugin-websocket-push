@@ -20,7 +20,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 
 		public async Task Send(Block block)
 		{
-			var transactionAsString = _jsonSerializer.Serialize(new BlockForRpc(block, true));
+			var transactionAsString = _jsonSerializer.Serialize(new BlockForRpc(block, true, null));
 			await SendRawAsync(transactionAsString);
 		}
 	}
