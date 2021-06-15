@@ -107,13 +107,18 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 
 		public readonly struct FilteredExecutionRequest
 		{
-			public readonly Address Contract { get; }
+			public struct CalldataFilter
+			{
+				public readonly UInt32 Offset;
+				public readonly Byte[] SearchBytes;
+				public CalldataFilter(UInt32 offset, Byte[] searchBytes) => (Offset, SearchBytes) = (offset, searchBytes);
+			}
 
-			public readonly UInt32 Signature { get; }
-
-			public readonly Int64 GasLimit { get; }
-
-			public FilteredExecutionRequest(Address contract, UInt32 signature, Int64 gasLimit) => (Contract, Signature, GasLimit) = (contract, signature, gasLimit);
+			public readonly Address Contract;
+			public readonly UInt32 Signature;
+			public readonly Int64 GasLimit;
+			public readonly CalldataFilter[] CalldataFilters;
+			public FilteredExecutionRequest(Address contract, UInt32 signature, Int64 gasLimit, CalldataFilter[] calldataFilters) => (Contract, Signature, GasLimit, CalldataFilters) = (contract, signature, gasLimit, calldataFilters);
 		}
 
 		public readonly struct FilterMatchMessage
@@ -174,8 +179,27 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			{
 				if (input.Length < 4) return;
 				var callSignature = BitConverter.ToUInt32(BitConverter.IsLittleEndian ? input.Slice(0, 4).ToArray().Reverse().ToArray() : input.Slice(0, 4).ToArray(), 0);
-				if (!_filters.Any(filter => filter.Contract == to && filter.Signature == callSignature)) return;
-				FilterMatches = FilterMatches.Add(new FilterMatch(gas, value, from, to, input, callType));
+
+				if (_filters.Any(MatchesDestinationAndSignature) || _filters.Any(MatchesSignatureAndCalldata))
+				{
+					FilterMatches = FilterMatches.Add(new FilterMatch(gas, value, from, to, input, callType));
+				}
+
+				Boolean MatchesDestinationAndSignature(FilteredExecutionRequest filter)
+				{
+					return filter.Contract == to && filter.Signature == callSignature;
+				}
+
+				Boolean MatchesSignatureAndCalldata(FilteredExecutionRequest filter)
+				{
+					return filter.Contract == Address.Zero && filter.Signature == callSignature && filter.CalldataFilters.ToArray().All(MatchesCalldata);
+				}
+
+				Boolean MatchesCalldata(FilteredExecutionRequest.CalldataFilter calldataFilter)
+				{
+					var calldataSlice = input.Slice((Int32)calldataFilter.Offset, calldataFilter.SearchBytes.Length);
+					return calldataFilter.SearchBytes.SequenceEqual(calldataSlice.ToArray());
+				}
 			}
 			public void ReportActionEnd(Int64 gas, ReadOnlyMemory<Byte> output) {}
 			public void ReportActionEnd(Int64 gas, Address deploymentAddress, ReadOnlyMemory<Byte> deployedCode) {}
