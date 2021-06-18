@@ -38,7 +38,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			{
 				var dataString = System.Text.Encoding.UTF8.GetString(data.Span);
 				var filterOptions = _nethermindJsonSerializer.Deserialize<FilteredExecutionRequest>(dataString);
-				if (filterOptions.Contract == Address.Zero)
+				if (filterOptions.Contract == Address.Zero && filterOptions.Signature == 0)
 				{
 					_eventTracingGasLimit = filterOptions.GasLimit;
 					return;
