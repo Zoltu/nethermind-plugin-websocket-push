@@ -90,7 +90,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 				await SendSimpleTransaction(transaction);
 				return;
 			}
-			await SendFilterMatchTransaction(transaction, tracer.FilterMatches, tracer.Logs);
+			await SendFilterMatchTransaction(transaction, tracer.FilterMatches.ToArray(), tracer.Logs.ToArray());
 		}
 
 		private async Task SendSimpleTransaction(Transaction transaction)
@@ -99,7 +99,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			await SendRawAsync(transactionAsString);
 		}
 
-		private async Task SendFilterMatchTransaction(Transaction transaction, ImmutableArray<FilterMatch> matches, ImmutableArray<LogEntry> logs)
+		private async Task SendFilterMatchTransaction(Transaction transaction, FilterMatch[] matches, LogEntry[] logs)
 		{
 			var transactionAsString = _nethermindJsonSerializer.Serialize(new FilterMatchMessage(transaction, matches, logs));
 			await SendRawAsync(transactionAsString);
@@ -124,9 +124,9 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 		public readonly struct FilterMatchMessage
 		{
 			public readonly Transaction Transaction;
-			public readonly ImmutableArray<FilterMatch> FilterMatches;
-			public readonly ImmutableArray<LogEntry> Logs;
-			public FilterMatchMessage(Transaction transaction, ImmutableArray<FilterMatch> filterMatches, ImmutableArray<LogEntry> logs) => (Transaction, FilterMatches, Logs) = (transaction, filterMatches, logs);
+			public readonly FilterMatch[] FilterMatches;
+			public readonly LogEntry[] Logs;
+			public FilterMatchMessage(Transaction transaction, FilterMatch[] filterMatches, LogEntry[] logs) => (Transaction, FilterMatches, Logs) = (transaction, filterMatches, logs);
 		}
 
 		public readonly struct FilterMatch
@@ -135,9 +135,9 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			public readonly UInt256 Value;
 			public readonly Address From;
 			public readonly Address To;
-			public readonly ReadOnlyMemory<Byte> Input;
+			public readonly Byte[] Input;
 			public readonly ExecutionType CallType;
-			public FilterMatch(Int64 gas, UInt256 value, Address from, Address to, ReadOnlyMemory<Byte> input, ExecutionType callType)
+			public FilterMatch(Int64 gas, UInt256 value, Address from, Address to, Byte[] input, ExecutionType callType)
 			{
 				Gas = gas;
 				Value = value;
@@ -182,7 +182,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 
 				if (_filters.Any(MatchesDestinationAndSignature) || _filters.Any(MatchesSignatureAndCalldata))
 				{
-					FilterMatches = FilterMatches.Add(new FilterMatch(gas, value, from, to, input, callType));
+					FilterMatches = FilterMatches.Add(new FilterMatch(gas, value, from, to, input.ToArray(), callType));
 				}
 
 				Boolean MatchesDestinationAndSignature(FilteredExecutionRequest filter)
