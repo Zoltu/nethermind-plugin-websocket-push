@@ -83,6 +83,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			var head = this.blockTree.Head;
 			if (head == null) throw new Exception($"BlockTree Head was null.");
 			var blockHeader = new BlockHeader(head.Hash!, Keccak.EmptyTreeHash, head.Beneficiary!, head.Difficulty, head.Number + 1, head.GasLimit, head.Timestamp + 1, Array.Empty<Byte>());
+			blockHeader.TotalDifficulty = 2 * blockHeader.Difficulty;
 			var block = new Block(blockHeader, new[] { transaction }, Enumerable.Empty<BlockHeader>());
 			var cancellationToken = new CancellationTokenSource(2000).Token;
 			var blockTracer = new MyBlockTracer(this.filters, cancellationToken);
