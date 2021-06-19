@@ -20,6 +20,10 @@ dotnet_style_predefined_type_for_locals_parameters_members = false
 dotnet_style_predefined_type_for_member_access = false
 csharp_style_expression_bodied_methods = when_on_single_line
 csharp_style_expression_bodied_constructors = when_on_single_line
+dotnet_style_qualification_for_field = true
+dotnet_style_qualification_for_property = true
+dotnet_style_qualification_for_method = true
+dotnet_style_qualification_for_event = true
 
 # allow overrides to have different parameter names from base classes, because some library authors are bad at naming
 dotnet_diagnostic.CA1725.severity = none
