@@ -63,11 +63,11 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 				var tracerFactory = new TracerFactory(dbProvider, blockTree, readOnlyTrieStore, blockPreprocessor, specProvider, logManager, ProcessingOptions.ProducingBlock | ProcessingOptions.IgnoreParentNotOnMainChain);
 				this.pendingWebSocketModule = new PendingWebSocketModule(logger, jsonSerializer, config, tracerFactory, this.nethermindApi.BlockTree);
 				this.nethermindApi.WebSocketsManager.AddModule(this.pendingWebSocketModule);
-				this.nethermindApi.TxPool.NewPending += (_, eventArgs) => Task.Run(() =>
+				this.nethermindApi.TxPool.NewPending += (_, eventArgs) => Task.Run(async () =>
 				{
 					try
 					{
-						_ = this.pendingWebSocketModule.OnNewPending(eventArgs.Transaction);
+						await this.pendingWebSocketModule.OnNewPending(eventArgs.Transaction);
 					}
 					catch (Exception exception)
 					{
