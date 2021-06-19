@@ -60,46 +60,43 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			}
 		}
 
-		public async Task Send(Transaction transaction)
+		public async Task OnNewPending(Transaction transaction)
 		{
-			await Task.Run(async () =>
+			// get a local copy of the list we can work with for the duration of this method
+			var filters = this.filters;
+			if (transaction.GasLimit < this.eventTracingGasLimit)
 			{
-				// get a local copy of the list we can work with for the duration of this method
-				var filters = this.filters;
-				if (transaction.GasLimit < this.eventTracingGasLimit)
-				{
-					// if there are no filters, just send the pending transactions as they are (no execution details)
-					if (filters.IsEmpty)
-					{
-						await this.SendSimpleTransaction(transaction);
-						return;
-					}
-					// if the gas limit for the transaction is less than the gas limit for all of the filters then ignore this transaction
-					if (filters.All(filter => transaction.GasLimit < filter.GasLimit))
-					{
-						await this.SendSimpleTransaction(transaction);
-						return;
-					}
-				}
-
-				var head = this.blockTree.Head;
-				if (head == null) throw new Exception($"BlockTree Head was null.");
-				var blockHeader = new BlockHeader(head.Hash!, Keccak.EmptyTreeHash, head.Beneficiary!, head.Difficulty, head.Number + 1, head.GasLimit, head.Timestamp + 1, Array.Empty<Byte>());
-				var block = new Block(blockHeader, new[] { transaction }, Enumerable.Empty<BlockHeader>());
-				var cancellationToken = new CancellationTokenSource(2000).Token;
-				var blockTracer = new MyBlockTracer(this.filters, cancellationToken);
-				var tracer = this.tracerFactory.Create();
-				var postTraceStateRoot = tracer.Trace(block, blockTracer);
-				var txTracer = blockTracer.TxTracer;
-				var filterMatches = txTracer?.FilterMatches ?? ImmutableArray<FilterMatch>.Empty;
-				var logs = txTracer?.Logs ?? ImmutableArray<LogEntry>.Empty;
-				if (filterMatches.IsEmpty && transaction.GasLimit < this.eventTracingGasLimit)
+				// if there are no filters, just send the pending transactions as they are (no execution details)
+				if (filters.IsEmpty)
 				{
 					await this.SendSimpleTransaction(transaction);
 					return;
 				}
-				await this.SendFilterMatchTransaction(transaction, filterMatches.ToArray(), logs.ToArray());
-			});
+				// if the gas limit for the transaction is less than the gas limit for all of the filters then ignore this transaction
+				if (filters.All(filter => transaction.GasLimit < filter.GasLimit))
+				{
+					await this.SendSimpleTransaction(transaction);
+					return;
+				}
+			}
+
+			var head = this.blockTree.Head;
+			if (head == null) throw new Exception($"BlockTree Head was null.");
+			var blockHeader = new BlockHeader(head.Hash!, Keccak.EmptyTreeHash, head.Beneficiary!, head.Difficulty, head.Number + 1, head.GasLimit, head.Timestamp + 1, Array.Empty<Byte>());
+			var block = new Block(blockHeader, new[] { transaction }, Enumerable.Empty<BlockHeader>());
+			var cancellationToken = new CancellationTokenSource(2000).Token;
+			var blockTracer = new MyBlockTracer(this.filters, cancellationToken);
+			var tracer = this.tracerFactory.Create();
+			var postTraceStateRoot = tracer.Trace(block, blockTracer);
+			var txTracer = blockTracer.TxTracer;
+			var filterMatches = txTracer?.FilterMatches ?? ImmutableArray<FilterMatch>.Empty;
+			var logs = txTracer?.Logs ?? ImmutableArray<LogEntry>.Empty;
+			if (filterMatches.IsEmpty && transaction.GasLimit < this.eventTracingGasLimit)
+			{
+				await this.SendSimpleTransaction(transaction);
+				return;
+			}
+			await this.SendFilterMatchTransaction(transaction, filterMatches.ToArray(), logs.ToArray());
 		}
 
 		private async Task SendSimpleTransaction(Transaction transaction)

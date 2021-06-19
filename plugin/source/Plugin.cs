@@ -67,7 +67,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 				{
 					try
 					{
-						_ = this.pendingWebSocketModule.Send(eventArgs.Transaction);
+						_ = this.pendingWebSocketModule.OnNewPending(eventArgs.Transaction);
 					}
 					catch (Exception exception)
 					{

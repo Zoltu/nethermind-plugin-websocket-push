@@ -20,6 +20,6 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 
 		protected override PendingWebSocketClient Create(ILogger logger, IJsonSerializer jsonSerializer, IWebSocketPushConfig config, WebSocket webSocket, String id, String client) => new(logger, config, webSocket, id, client, jsonSerializer, this.tracerFactory, this.blockTree);
 
-		public Task Send(Transaction transaction) => Task.WhenAll(this.clients.Values.Select(client => client.Send(transaction)));
+		public Task OnNewPending(Transaction transaction) => Task.WhenAll(this.clients.Values.Select(client => client.OnNewPending(transaction)));
 	}
 }
