@@ -220,6 +220,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 
 				Boolean MatchesCalldata(FilteredExecutionRequest.CalldataFilter calldataFilter)
 				{
+					if (input.Length < calldataFilter.Offset + calldataFilter.SearchBytes.Length) return false;
 					var calldataSlice = input.Slice((Int32)calldataFilter.Offset, calldataFilter.SearchBytes.Length);
 					return calldataFilter.SearchBytes.SequenceEqual(calldataSlice.ToArray());
 				}
