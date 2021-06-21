@@ -40,7 +40,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			{
 				var dataString = System.Text.Encoding.UTF8.GetString(data.Span);
 				var filterOptions = this.nethermindJsonSerializer.Deserialize<FilteredExecutionRequest>(dataString);
-				if (filterOptions.Contract == Address.Zero && filterOptions.Signature == 0)
+				if (filterOptions.Contract == null && filterOptions.Signature == null && filterOptions.CalldataFilters.Length == 0)
 				{
 					this.eventTracingGasLimit = filterOptions.GasLimit;
 					return;
@@ -121,18 +121,18 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 				public CalldataFilter(UInt32 offset, Byte[] searchBytes) => (this.Offset, this.SearchBytes) = (offset, searchBytes);
 			}
 
-			public readonly Address Contract;
-			public readonly UInt32 Signature;
+			public readonly Address? Contract;
+			public readonly UInt32? Signature;
 			public readonly Int64 GasLimit;
 			public readonly CalldataFilter[] CalldataFilters;
-			public FilteredExecutionRequest(Address contract, UInt32 signature, Int64 gasLimit, CalldataFilter[] calldataFilters) => (this.Contract, this.Signature, this.GasLimit, this.CalldataFilters) = (contract, signature, gasLimit, calldataFilters);
+			public FilteredExecutionRequest(Address? contract, UInt32? signature, Int64 gasLimit, CalldataFilter[] calldataFilters) => (this.Contract, this.Signature, this.GasLimit, this.CalldataFilters) = (contract, signature, gasLimit, calldataFilters);
 		}
 
 		public readonly struct FilterMatchMessage
 		{
-			public readonly Transaction Transaction;
-			public readonly FilterMatch[] FilterMatches;
-			public readonly LogEntry[] Logs;
+			public Transaction Transaction { get; }
+			public FilterMatch[] FilterMatches { get; }
+			public LogEntry[] Logs { get; }
 			public FilterMatchMessage(Transaction transaction, FilterMatch[] filterMatches, LogEntry[] logs) => (this.Transaction, this.FilterMatches, this.Logs) = (transaction, filterMatches, logs);
 		}
 
@@ -141,10 +141,10 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			public readonly Int64 Gas;
 			public readonly UInt256 Value;
 			public readonly Address From;
-			public readonly Address To;
+			public readonly Address? To;
 			public readonly Byte[] Input;
 			public readonly ExecutionType CallType;
-			public FilterMatch(Int64 gas, UInt256 value, Address from, Address to, Byte[] input, ExecutionType callType)
+			public FilterMatch(Int64 gas, UInt256 value, Address from, Address? to, Byte[] input, ExecutionType callType)
 			{
 				this.Gas = gas;
 				this.Value = value;
@@ -174,11 +174,11 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			private readonly ImmutableArray<FilteredExecutionRequest> filters;
 			public ImmutableArray<FilterMatch> FilterMatches { get; private set; } = ImmutableArray<FilterMatch>.Empty;
 			public ImmutableArray<LogEntry> Logs { get; private set; } = ImmutableArray<LogEntry>.Empty;
-			public MyTxTracer(ImmutableArray<FilteredExecutionRequest> filters) => this.filters = filters;
+			public MyTxTracer(ImmutableArray<FilteredExecutionRequest> filters) => (this.filters, this.IsTracingActions) = (filters, !filters.IsEmpty);
 
 			public Boolean IsTracingReceipt => true;
 			public Boolean IsTracingAccess => false;
-			public Boolean IsTracingActions => true;
+			public Boolean IsTracingActions { get; private set; }
 			public Boolean IsTracingOpLevelStorage => false;
 			public Boolean IsTracingMemory => false;
 			public Boolean IsTracingInstructions => false;
@@ -193,24 +193,29 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			public void MarkAsSuccess(Address recipient, Int64 gasSpent, Byte[] output, LogEntry[] logs, Keccak? stateRoot) => this.Logs = logs.ToImmutableArray();
 			public void ReportAccess(IReadOnlySet<Address> accessedAddresses, IReadOnlySet<StorageCell> accessedStorageCells) {}
 			public void ReportAccountRead(Address address) { }
-			public void ReportAction(Int64 gas, UInt256 value, Address from, Address to, ReadOnlyMemory<Byte> input, ExecutionType callType, Boolean isPrecompileCall = false)
+			public void ReportAction(Int64 gas, UInt256 value, Address from, Address? to, ReadOnlyMemory<Byte> input, ExecutionType callType, Boolean isPrecompileCall = false)
 			{
 				if (input.Length < 4) return;
 				var callSignature = BitConverter.ToUInt32(BitConverter.IsLittleEndian ? input.Slice(0, 4).ToArray().Reverse().ToArray() : input.Slice(0, 4).ToArray(), 0);
 
-				if (this.filters.Any(MatchesDestinationAndSignature) || this.filters.Any(MatchesSignatureAndCalldata))
+				if (this.filters.Any(MatchesFilter))
 				{
 					this.FilterMatches = this.FilterMatches.Add(new FilterMatch(gas, value, from, to, input.ToArray(), callType));
 				}
 
-				Boolean MatchesDestinationAndSignature(FilteredExecutionRequest filter)
+				Boolean MatchesFilter(FilteredExecutionRequest filter)
 				{
-					return filter.Contract == to && filter.Signature == callSignature;
+					return MatchesDestination(filter) && MatchesSignature(filter) && filter.CalldataFilters.All(MatchesCalldata);
 				}
 
-				Boolean MatchesSignatureAndCalldata(FilteredExecutionRequest filter)
+				Boolean MatchesDestination(FilteredExecutionRequest filter)
 				{
-					return filter.Contract == Address.Zero && filter.Signature == callSignature && filter.CalldataFilters.All(MatchesCalldata);
+					return filter.Contract == null || filter.Contract == to;
+				}
+
+				Boolean MatchesSignature(FilteredExecutionRequest filter)
+				{
+					return filter.Signature == null || filter.Signature == callSignature;
 				}
 
 				Boolean MatchesCalldata(FilteredExecutionRequest.CalldataFilter calldataFilter)
