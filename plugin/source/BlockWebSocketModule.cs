@@ -16,6 +16,6 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 
 		protected override BlockWebSocketClient Create(ILogger logger, IJsonSerializer jsonSerializer, IWebSocketPushConfig config, WebSocket webSocket, String id, String client) => new(logger, jsonSerializer, config, webSocket, id, client);
 
-		public Task Send(Block block) => Task.WhenAll(this.clients.Values.Select(client => client.Send(block)));
+		public Task Send(Block block) => Task.WhenAll(this.Clients.Values.Select(client => client.Send(block)));
 	}
 }
