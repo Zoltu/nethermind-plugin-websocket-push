@@ -96,6 +96,8 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			public void StartNewBlockTrace(Block block) => this.TxTracer = null;
 			public ITxTracer StartNewTxTrace(Transaction? tx) => new CancellationTxTracer(this.TxTracer = new MyTxTracer(this.IsTracingActions), this.cancellationToken);
 			public void EndTxTrace() { }
+
+			public void EndBlockTrace() { }
 		}
 
 		public sealed class TransactionAction
