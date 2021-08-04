@@ -11,6 +11,7 @@ using Nethermind.Core.Crypto;
 using Nethermind.Evm;
 using Nethermind.Evm.Tracing;
 using Nethermind.Int256;
+using Nethermind.JsonRpc.Data;
 using Nethermind.Logging;
 using Nethermind.Mev.Execution;
 using Nethermind.Serialization.Json;
@@ -164,10 +165,10 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 
 		public readonly struct TracedTransactionMessage
 		{
-			public Transaction Transaction { get; }
+			public TransactionForRpc Transaction { get; }
 			public IEnumerable<LogEntry>? Events { get; }
 			public IEnumerable<TransactionAction>? Actions { get; }
-			public TracedTransactionMessage(Transaction transaction, IEnumerable<LogEntry>? events, IEnumerable<TransactionAction>? actions) => (this.Transaction, this.Events, this.Actions) = (transaction, events, actions);
+			public TracedTransactionMessage(Transaction transaction, IEnumerable<LogEntry>? events, IEnumerable<TransactionAction>? actions) => (this.Transaction, this.Events, this.Actions) = (new TransactionForRpc(transaction), events, actions);
 		}
 	}
 }
