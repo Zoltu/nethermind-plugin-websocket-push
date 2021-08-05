@@ -24,7 +24,6 @@ const referenceAssemblyPaths = [
 	path.join('src', 'Nethermind', 'Nethermind.Monitoring', 'bin', 'Release', 'net5.0', 'ref', 'Nethermind.Monitoring.dll'),
 	path.join('src', 'Nethermind', 'Nethermind.Network', 'bin', 'Release', 'net5.0', 'ref', 'Nethermind.Network.dll'),
 	path.join('src', 'Nethermind', 'Nethermind.Network.Stats', 'bin', 'Release', 'net5.0', 'ref', 'Nethermind.Network.Stats.dll'),
-	path.join('src', 'Nethermind', 'Nethermind.PubSub', 'bin', 'Release', 'net5.0', 'ref', 'Nethermind.PubSub.dll'),
 	path.join('src', 'Nethermind', 'Nethermind.Serialization.Json', 'bin', 'Release', 'net5.0', 'ref', 'Nethermind.Serialization.Json.dll'),
 	path.join('src', 'Nethermind', 'Nethermind.Specs', 'bin', 'Release', 'net5.0', 'ref', 'Nethermind.Specs.dll'),
 	path.join('src', 'Nethermind', 'Nethermind.State', 'bin', 'Release', 'net5.0', 'ref', 'Nethermind.State.dll'),
