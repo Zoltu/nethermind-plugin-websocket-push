@@ -78,7 +78,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			}
 			if (config.BlockEnabled)
 			{
-				this.blockWebSocketModule = new BlockWebSocketModule(logger, jsonSerializer, config);
+				this.blockWebSocketModule = new BlockWebSocketModule(logger, jsonSerializer, specProvider, config);
 				this.nethermindApi.WebSocketsManager.AddModule(this.blockWebSocketModule);
 				// TODO: see BlockchainProcessor.cs:201 (do we need to do this?) and BlockchainProcessor.cs:269
 				// TODO: use a readonly blockchain processor
