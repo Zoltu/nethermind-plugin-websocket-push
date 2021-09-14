@@ -3,40 +3,39 @@ using System.Net.WebSockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Nethermind.Logging;
-using Nethermind.WebSockets;
+using Nethermind.Serialization.Json;
+using Nethermind.Sockets;
 
 namespace Zoltu.Nethermind.Plugin.WebSocketPush
 {
-	public abstract class WebSocketClient : DisposeAsyncOnce, IWebSocketsClient
+	public abstract class WebSocketClient : SocketClient, IAsyncDisposable
 	{
-		public String Id { get; }
-
-		public String Client { get; }
-
 		internal readonly ILogger logger;
 		private readonly IWebSocketPushConfig config;
 		private readonly WebSocket webSocket;
 
-		public WebSocketClient(ILogger logger, IWebSocketPushConfig config, WebSocket webSocket, String id, String client)
+		public WebSocketClient(ILogManager logManager, IJsonSerializer jsonSerializer, ILogger logger, IWebSocketPushConfig config, WebSocket webSocket, String id, String clientName): base(clientName, new WebSocketHandler(webSocket, logManager), jsonSerializer)
 		{
 			this.logger = logger;
 			this.config = config;
 			this.webSocket = webSocket;
-			this.Id = id;
-			this.Client = client;
 		}
 
-		public virtual async Task ReceiveAsync(Memory<Byte> data) => await this.SendRawAsync("WebSocket message received, but this endpoint is not configured to handle any incoming messages.");
+		public override async Task ProcessAsync(Memory<Byte> data) => await this.SendRawAsync("WebSocket message received, but this endpoint is not configured to handle any incoming messages.");
 
-		public Task SendAsync(WebSocketsMessage message) => throw new NotImplementedException();
-
-		public async Task SendRawAsync(String message)
+		public virtual async Task SendRawAsync(String message)
 		{
 			var messageAsBytes = System.Text.Encoding.UTF8.GetBytes(message);
 			await this.webSocket.SendAsync(messageAsBytes, WebSocketMessageType.Text, true, CancellationToken.None);
 		}
 
-		protected override async ValueTask DisposeOnce()
+		private UInt32 disposed;
+		public async ValueTask DisposeAsync()
+		{
+			if (Interlocked.Exchange(ref this.disposed, 1) != 0) return;
+			await this.DisposeOnce();
+		}
+		protected async ValueTask DisposeOnce()
 		{
 			try
 			{
@@ -52,6 +51,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			}
 
 			this.webSocket.Abort();
+			this.Dispose();
 			// disposal of the WebSocket is handled by AspNet
 		}
 	}

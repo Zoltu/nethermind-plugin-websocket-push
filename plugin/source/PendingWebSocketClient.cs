@@ -2,6 +2,7 @@ using System;
 using System.Net.WebSockets;
 using System.Threading.Tasks;
 using Nethermind.Logging;
+using Nethermind.Serialization.Json;
 
 namespace Zoltu.Nethermind.Plugin.WebSocketPush
 {
@@ -9,9 +10,9 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 	{
 		public TraceLevels TraceLevel { get; private set; } = TraceLevels.None;
 
-		public PendingWebSocketClient(ILogger logger, IWebSocketPushConfig config, WebSocket webSocket, String id, String client) : base(logger, config, webSocket, id, client) { }
+		public PendingWebSocketClient(ILogManager logManager, IJsonSerializer serializer, ILogger logger, IWebSocketPushConfig config, WebSocket webSocket, String id, String client) : base(logManager, serializer, logger, config, webSocket, id, client) { }
 
-		public override async Task ReceiveAsync(Memory<Byte> data)
+		public override async Task ProcessAsync(Memory<Byte> data)
 		{
 			try
 			{

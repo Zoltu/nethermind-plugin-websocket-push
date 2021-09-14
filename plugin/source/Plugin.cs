@@ -61,7 +61,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			if (config.PendingEnabled)
 			{
 				var tracerFactory = new TracerFactory(dbProvider, blockTree, readOnlyTrieStore, blockPreprocessor, specProvider, logManager, ProcessingOptions.ProducingBlock | ProcessingOptions.IgnoreParentNotOnMainChain);
-				this.pendingWebSocketModule = new PendingWebSocketModule(logger, jsonSerializer, config, tracerFactory, this.nethermindApi.BlockTree);
+				this.pendingWebSocketModule = new PendingWebSocketModule(logManager, logger, jsonSerializer, config, tracerFactory, this.nethermindApi.BlockTree);
 				this.nethermindApi.WebSocketsManager.AddModule(this.pendingWebSocketModule);
 				this.nethermindApi.TxPool.NewPending += (_, eventArgs) => Task.Run(async () =>
 				{
@@ -78,7 +78,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			}
 			if (config.BlockEnabled)
 			{
-				this.blockWebSocketModule = new BlockWebSocketModule(logger, jsonSerializer, specProvider, config);
+				this.blockWebSocketModule = new BlockWebSocketModule(logManager, logger, jsonSerializer, specProvider, config);
 				this.nethermindApi.WebSocketsManager.AddModule(this.blockWebSocketModule);
 				// TODO: see BlockchainProcessor.cs:201 (do we need to do this?) and BlockchainProcessor.cs:269
 				// TODO: use a readonly blockchain processor

@@ -25,13 +25,13 @@ const referenceAssemblyPaths = [
 	path.join('src', 'Nethermind', 'Nethermind.Network', 'bin', 'Release', 'net5.0', 'ref', 'Nethermind.Network.dll'),
 	path.join('src', 'Nethermind', 'Nethermind.Network.Stats', 'bin', 'Release', 'net5.0', 'ref', 'Nethermind.Network.Stats.dll'),
 	path.join('src', 'Nethermind', 'Nethermind.Serialization.Json', 'bin', 'Release', 'net5.0', 'ref', 'Nethermind.Serialization.Json.dll'),
+	path.join('src', 'Nethermind', 'Nethermind.Sockets', 'bin', 'Release', 'net5.0', 'ref', 'Nethermind.Sockets.dll'),
 	path.join('src', 'Nethermind', 'Nethermind.Specs', 'bin', 'Release', 'net5.0', 'ref', 'Nethermind.Specs.dll'),
 	path.join('src', 'Nethermind', 'Nethermind.State', 'bin', 'Release', 'net5.0', 'ref', 'Nethermind.State.dll'),
 	path.join('src', 'Nethermind', 'Nethermind.Synchronization', 'bin', 'Release', 'net5.0', 'ref', 'Nethermind.Synchronization.dll'),
 	path.join('src', 'Nethermind', 'Nethermind.Trie', 'bin', 'Release', 'net5.0', 'ref', 'Nethermind.Trie.dll'),
 	path.join('src', 'Nethermind', 'Nethermind.TxPool', 'bin', 'Release', 'net5.0', 'ref', 'Nethermind.TxPool.dll'),
 	path.join('src', 'Nethermind', 'Nethermind.Wallet', 'bin', 'Release', 'net5.0', 'ref', 'Nethermind.Wallet.dll'),
-	path.join('src', 'Nethermind', 'Nethermind.WebSockets', 'bin', 'Release', 'net5.0', 'ref', 'Nethermind.WebSockets.dll'),
 ]
 
 async function main() {

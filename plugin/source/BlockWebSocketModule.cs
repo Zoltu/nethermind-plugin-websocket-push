@@ -15,9 +15,9 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 
 		private readonly ISpecProvider specProvider;
 
-		public BlockWebSocketModule(ILogger logger, IJsonSerializer jsonSerializer, ISpecProvider specProvider, IWebSocketPushConfig config) : base(logger, jsonSerializer, config) => this.specProvider = specProvider;
+		public BlockWebSocketModule(ILogManager logManager, ILogger logger, IJsonSerializer jsonSerializer, ISpecProvider specProvider, IWebSocketPushConfig config) : base(logManager, logger, jsonSerializer, config) => this.specProvider = specProvider;
 
-		protected override BlockWebSocketClient Create(ILogger logger, IJsonSerializer jsonSerializer, IWebSocketPushConfig config, WebSocket webSocket, String id, String client) => new(logger, jsonSerializer, this.specProvider, config, webSocket, id, client);
+		protected override BlockWebSocketClient Create(ILogManager logManager, ILogger logger, IJsonSerializer jsonSerializer, IWebSocketPushConfig config, WebSocket webSocket, String id, String client) => new(logManager, logger, jsonSerializer, this.specProvider, config, webSocket, id, client);
 
 		public Task Send(Block block) => Task.WhenAll(this.Clients.Values.Select(client => client.Send(block)));
 	}

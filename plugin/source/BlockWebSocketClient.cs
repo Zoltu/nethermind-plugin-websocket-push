@@ -14,7 +14,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 		private readonly IJsonSerializer jsonSerializer;
 		private readonly ISpecProvider specProvider;
 
-		public BlockWebSocketClient(ILogger logger, IJsonSerializer jsonSerializer, ISpecProvider specProvider, IWebSocketPushConfig config, WebSocket webSocket, String id, String client) : base(logger, config, webSocket, id, client) => (this.jsonSerializer, this.specProvider) = (jsonSerializer, specProvider);
+		public BlockWebSocketClient(ILogManager logManager, ILogger logger, IJsonSerializer jsonSerializer, ISpecProvider specProvider, IWebSocketPushConfig config, WebSocket webSocket, String id, String client) : base(logManager, jsonSerializer, logger, config, webSocket, id, client) => (this.jsonSerializer, this.specProvider) = (jsonSerializer, specProvider);
 
 		public async Task Send(Block block)
 		{

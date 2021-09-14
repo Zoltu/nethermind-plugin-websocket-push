@@ -24,9 +24,9 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 		private readonly ITracerFactory tracerFactory;
 		private readonly IBlockTree blockTree;
 
-		public PendingWebSocketModule(ILogger logger, IJsonSerializer jsonSerializer, IWebSocketPushConfig config, ITracerFactory tracerFactory, IBlockTree blockTree) : base(logger, jsonSerializer, config) => (this.tracerFactory, this.blockTree) = (tracerFactory, blockTree);
+		public PendingWebSocketModule(ILogManager logManager, ILogger logger, IJsonSerializer jsonSerializer, IWebSocketPushConfig config, ITracerFactory tracerFactory, IBlockTree blockTree) : base(logManager, logger, jsonSerializer, config) => (this.tracerFactory, this.blockTree) = (tracerFactory, blockTree);
 
-		protected override PendingWebSocketClient Create(ILogger logger, IJsonSerializer jsonSerializer, IWebSocketPushConfig config, WebSocket webSocket, String id, String client) => new(logger, config, webSocket, id, client);
+		protected override PendingWebSocketClient Create(ILogManager logManager, ILogger logger, IJsonSerializer jsonSerializer, IWebSocketPushConfig config, WebSocket webSocket, String id, String client) => new(logManager, jsonSerializer, logger, config, webSocket, id, client);
 
 		public async Task OnNewPending(Transaction transaction)
 		{
