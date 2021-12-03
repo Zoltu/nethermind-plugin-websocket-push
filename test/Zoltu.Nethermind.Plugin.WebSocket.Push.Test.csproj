@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFramework>net5.0</TargetFramework>
+		<TargetFramework>net6.0</TargetFramework>
 		<AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
 		<ProduceReferenceAssembly>false</ProduceReferenceAssembly>
 		<IsPackable>false</IsPackable>
@@ -23,7 +23,7 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\plugin\Zoltu.Nethermind.Plugin.WebSocket.Push.csproj" />
-		<ProjectReference Include="..\..\nethermind\src\Nethermind\Nethermind.Api\Nethermind.Api.csproj" />
+		<!-- <ProjectReference Include="..\..\nethermind\src\Nethermind\Nethermind.Api\Nethermind.Api.csproj" /> -->
 	</ItemGroup>
 
 </Project>

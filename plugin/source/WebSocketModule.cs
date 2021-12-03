@@ -33,7 +33,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 
 		public Boolean TryInit(HttpRequest request) => true;
 
-		public ISocketsClient CreateClient(WebSocket webSocket, String clientName)
+		public ISocketsClient CreateClient(WebSocket webSocket, String clientName, int port)
 		{
 			this.Logger.Info($"Instantiating pending push client: '{clientName}'.");
 			var id = Interlocked.Increment(ref this.lastId).ToString(CultureInfo.InvariantCulture);

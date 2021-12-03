@@ -21,7 +21,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			this.webSocket = webSocket;
 		}
 
-		public override async Task ProcessAsync(Memory<Byte> data) => await this.SendRawAsync("WebSocket message received, but this endpoint is not configured to handle any incoming messages.");
+		public override async Task ProcessAsync(ArraySegment<Byte> data) => await this.SendRawAsync("WebSocket message received, but this endpoint is not configured to handle any incoming messages.");
 
 		public virtual async Task SendRawAsync(String message)
 		{
