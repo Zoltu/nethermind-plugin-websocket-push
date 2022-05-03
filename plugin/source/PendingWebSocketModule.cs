@@ -132,6 +132,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			public Boolean IsTracingBlockHash => false;
 			public Boolean IsTracingStorage => false;
 
+			public void LoadOperationStorage(Address address, UInt256 storageIndex, ReadOnlySpan<byte> value) { }
 			public void MarkAsFailed(Address recipient, Int64 gasSpent, Byte[] output, String error, Keccak? stateRoot) { }
 			public void MarkAsSuccess(Address recipient, Int64 gasSpent, Byte[] output, LogEntry[] logs, Keccak? stateRoot) => this.Events = logs.ToImmutableArray();
 			public void ReportAccess(IReadOnlySet<Address> accessedAddresses, IReadOnlySet<StorageCell> accessedStorageCells) { }
