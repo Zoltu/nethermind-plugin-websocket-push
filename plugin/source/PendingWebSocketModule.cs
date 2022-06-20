@@ -135,6 +135,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			public void LoadOperationStorage(Address address, UInt256 storageIndex, ReadOnlySpan<byte> value) { }
 			public void MarkAsFailed(Address recipient, Int64 gasSpent, Byte[] output, String error, Keccak? stateRoot) { }
 			public void MarkAsSuccess(Address recipient, Int64 gasSpent, Byte[] output, LogEntry[] logs, Keccak? stateRoot) => this.Events = logs.ToImmutableArray();
+			public void StartOperation(Int32 depth, Int64 gas, Instruction opcode, Int32 pc, Boolean isPostMerge = false) { }
 			public void ReportAccess(IReadOnlySet<Address> accessedAddresses, IReadOnlySet<StorageCell> accessedStorageCells) { }
 			public void ReportAccountRead(Address address) { }
 			public void ReportAction(Int64 gas, UInt256 value, Address from, Address? to, ReadOnlyMemory<Byte> input, ExecutionType callType, Boolean isPrecompileCall = false) => this.Actions = this.Actions.Enqueue(new TransactionAction(gas, value, from, to, input, callType, isPrecompileCall));

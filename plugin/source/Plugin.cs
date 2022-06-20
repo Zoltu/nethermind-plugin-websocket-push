@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Nethermind.Api;
 using Nethermind.Api.Extensions;
-using Nethermind.Blockchain.Processing;
+using Nethermind.Consensus.Processing;
 using Nethermind.JsonRpc;
 using Nethermind.Mev.Execution;
 
