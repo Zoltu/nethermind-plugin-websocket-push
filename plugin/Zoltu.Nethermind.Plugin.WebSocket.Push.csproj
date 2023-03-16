@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFramework>net7.0</TargetFramework>
 		<LangVersion>9.0</LangVersion>
 		<Nullable>enable</Nullable>
 		<Deterministic>true</Deterministic>
@@ -15,5 +15,8 @@
 		<Reference Include="..\references\*.dll">
 			<Private>false</Private>
 		</Reference>
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Nethermind.Numerics.Int256" Version="1.1.0" />
 	</ItemGroup>
 </Project>

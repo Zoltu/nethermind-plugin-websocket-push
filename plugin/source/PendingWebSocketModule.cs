@@ -131,6 +131,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			public Boolean IsTracingState => false;
 			public Boolean IsTracingBlockHash => false;
 			public Boolean IsTracingStorage => false;
+			public Boolean IsTracingFees => false;
 
 			public void LoadOperationStorage(Address address, UInt256 storageIndex, ReadOnlySpan<byte> value) { }
 			public void MarkAsFailed(Address recipient, Int64 gasSpent, Byte[] output, String error, Keccak? stateRoot) { }
@@ -147,6 +148,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			public void ReportByteCode(Byte[] byteCode) { }
 			public void ReportCodeChange(Address address, Byte[]? before, Byte[]? after) { }
 			public void ReportExtraGasPressure(Int64 extraGasPressure) { }
+			public void ReportFees(UInt256 fees, UInt256 burntFees) { }
 			public void ReportGasUpdateForVmTrace(Int64 refund, Int64 gasAvailable) { }
 			public void ReportMemoryChange(Int64 offset, in ReadOnlySpan<Byte> data) { }
 			public void ReportNonceChange(Address address, UInt256? before, UInt256? after) { }
