@@ -75,7 +75,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			var cancellationToken = new CancellationTokenSource(2000).Token;
 			var blockTracer = new SingleTransactionBlockTracer(traceActions, cancellationToken);
 			var tracer = this.tracerFactory.Create();
-			_ = tracer.Trace(block, blockTracer);
+			tracer.Trace(block, blockTracer);
 			return blockTracer.TxTracer;
 		}
 
@@ -119,6 +119,7 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			public ImmutableArray<LogEntry> Events { get; private set; } = ImmutableArray<LogEntry>.Empty;
 			public MyTxTracer(Boolean traceActions) => this.IsTracingActions = traceActions;
 
+			public Boolean IsTracing => true;
 			public Boolean IsTracingReceipt => true;
 			public Boolean IsTracingAccess => false;
 			public Boolean IsTracingActions { get; }
@@ -158,8 +159,8 @@ namespace Zoltu.Nethermind.Plugin.WebSocketPush
 			public void ReportSelfDestruct(Address address, UInt256 balance, Address refundAddress) { }
 			public void ReportStackPush(in ReadOnlySpan<Byte> stackItem) { }
 			public void ReportStorageChange(in ReadOnlySpan<Byte> key, in ReadOnlySpan<Byte> value) { }
-			public void ReportStorageChange(StorageCell storageCell, Byte[] before, Byte[] after) { }
-			public void ReportStorageRead(StorageCell storageCell) { }
+			public void ReportStorageChange(in StorageCell storageCell, Byte[] before, Byte[] after) { }
+			public void ReportStorageRead(in StorageCell storageCell) { }
 			public void SetOperationMemory(List<String> memoryTrace) { }
 			public void SetOperationMemorySize(UInt64 newSize) { }
 			public void SetOperationStack(List<String> stackTrace) { }

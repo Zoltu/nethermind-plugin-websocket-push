@@ -2,7 +2,6 @@
 FROM mcr.microsoft.com/dotnet/sdk@sha256:e049e6a153619337ceb4edd040fb60a220d420414d41d6eb39708d6ce390bc7c as builder
 WORKDIR /build/plugin
 COPY plugin/*.csproj /build/plugin/
-COPY references/ /build/references/
 RUN dotnet restore
 COPY plugin/source/ /build/plugin/source/
 RUN dotnet build --configuration Release --output /output

@@ -12,11 +12,9 @@
 	<ItemGroup>
 		<SourceRoot Include="$(MSBuildProjectDirectory)\" MappedPath="/_/" />
 		<FrameworkReference Include="Microsoft.AspNetCore.App" />
-		<Reference Include="..\references\*.dll">
-			<Private>false</Private>
-		</Reference>
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Nethermind.Numerics.Int256" Version="1.1.0" />
+		<PackageReference Include="Nethermind.ReferenceAssemblies" Version="1.20.1" />
 	</ItemGroup>
 </Project>
